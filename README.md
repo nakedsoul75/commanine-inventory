@@ -36,6 +36,11 @@ streamlit run app.py
 
 [docs/setup_streamlit_cloud.md](docs/setup_streamlit_cloud.md) 참조
 
+배포 시 사용자 폰/PC 어디서든 접근 가능:
+```
+https://commanine-inventory-{난수}.streamlit.app
+```
+
 ## 직원 사용 가이드
 
 [docs/employee_guide.md](docs/employee_guide.md) 참조
