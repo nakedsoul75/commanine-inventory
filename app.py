@@ -80,7 +80,7 @@ def page_dashboard():
     except Exception:
         pass
 
-    col1.metric("총 주문", f"{o_total:,}건")
+    col1.metric("총 주문", f"{o_total:,}건", delta=f"🌏 직구 {o_overseas}건" if o_overseas else None, delta_color="off")
     col2.metric("출하 완료", f"{o_shipped:,}건")
     col3.metric("출하 지연", f"{o_delayed:,}건", delta="확인 필요" if o_delayed else None, delta_color="inverse")
     col4.metric("재고 부족", f"{inv_low:,}개 SKU")
@@ -98,12 +98,14 @@ def page_dashboard():
 
 def page_orders():
     st.title("📦 주문 현황")
-    col1, col2, col3 = st.columns([1, 1, 2])
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
     with col1:
         days = st.selectbox("기간", [1, 3, 7, 14, 30], index=2)
     with col2:
         status_filter = st.selectbox("상태", ["전체", "NEW", "SHIPPED", "DELAYED", "CANCELED"])
     with col3:
+        overseas_filter = st.selectbox("직구", ["전체", "🌏 직구만", "일반만"])
+    with col4:
         search = st.text_input("🔍 검색 (주문번호/상품명/이지코드)")
 
     from datetime import datetime, timedelta
@@ -111,6 +113,10 @@ def page_orders():
     q = client.table("orders").select("*").gte("order_date", cutoff).order("order_date", desc=True).limit(500)
     if status_filter != "전체":
         q = q.eq("status", status_filter)
+    if overseas_filter == "🌏 직구만":
+        q = q.eq("is_overseas_proxy", True)
+    elif overseas_filter == "일반만":
+        q = q.eq("is_overseas_proxy", False)
     res = q.execute()
     rows = res.data or []
     if search:
@@ -119,10 +125,14 @@ def page_orders():
                 or s in str(r.get("product_name", "")).lower()
                 or s in str(r.get("ea_code", "") or "").lower()]
 
-    st.caption(f"{len(rows)}건")
+    overseas_count = sum(1 for r in rows if r.get("is_overseas_proxy"))
+    st.caption(f"{len(rows)}건 (🌏 직구 {overseas_count}건)")
     if rows:
         df = pd.DataFrame(rows)
-        cols_show = [c for c in ["order_date", "sub_channel", "order_no", "ea_code",
+        # Add 직구 indicator column
+        if "is_overseas_proxy" in df.columns:
+            df["직구"] = df["is_overseas_proxy"].apply(lambda x: "🌏" if x else "")
+        cols_show = [c for c in ["order_date", "sub_channel", "order_no", "직구", "ea_code",
                                   "product_name", "option_name", "qty", "amount",
                                   "tracking_no", "status"] if c in df.columns]
         st.dataframe(df[cols_show], use_container_width=True, hide_index=True)

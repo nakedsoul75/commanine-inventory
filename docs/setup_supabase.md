@@ -16,10 +16,9 @@
 |---|---|
 | **Organization** | (자동 생성된 본인 organization 선택) |
 | **Project name** | `commanine-inventory` |
-| **Database Password** | 강한 비밀번호 (메모장에 임시 저장 — 잊으면 재설정 가능) |
+| **Database Password** | 강한 비밀번호 (메모장에 임시 저장 — 잊으면 재설정 가능commanine2026++ ) |
 | **Region** | **Northeast Asia (Seoul)** 또는 Tokyo |
 | **Pricing Plan** | **Free** |
-
 3. **Create new project** 클릭
 4. 1-2분 대기 (DB 초기화)
 
@@ -33,7 +32,7 @@
 
 | 항목 | 위치 | 용도 |
 |---|---|---|
-| **Project URL** | 페이지 상단 | https://xxxxx.supabase.co |
+| **Project URL=https://qzxfptcqcwyayfnffgze.supabase.co
 | **anon / public** | Project API keys | 클라이언트용 (공개 가능) |
 | **service_role** | Project API keys | 서버용 (비밀, 절대 노출 X) |
 

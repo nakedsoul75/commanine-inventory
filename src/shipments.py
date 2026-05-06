@@ -85,6 +85,7 @@ def preview_shipments(df: pd.DataFrame, valid_ea_codes: set[str]) -> dict[str, A
         product_name = safe_str(r.get("상품명"))
         seller_name = safe_str(r.get("판매처 상품명")) or product_name
         receiver = safe_str(r.get("수령자이름"))
+        receiver_addr = safe_str(r.get("수령자주소"))
         shipped_at = parse_dt(r.get("송장입력일") or r.get("배송일"))
         courier = safe_str(r.get("택배사"))
 
@@ -116,6 +117,7 @@ def preview_shipments(df: pd.DataFrame, valid_ea_codes: set[str]) -> dict[str, A
             "product_name": product_name,
             "seller_name": seller_name,
             "receiver": receiver,
+            "receiver_address": receiver_addr,
             "shipped_at": shipped_at,
         })
 
@@ -134,12 +136,20 @@ def commit_shipments(rows: list[dict], imported_by: str) -> dict:
     """미리보기 통과한 행을 DB에 적재 + 매핑 학습 + orders 송장 매칭."""
     client = get_client()
 
-    # 1. shipments 테이블 적재
+    # 1. shipments 테이블 적재 (직구 감지 포함)
+    try:
+        from src import forwarder
+    except ImportError:
+        forwarder = None
+
     ship_rows = []
     mapping_rows = []
     for r in rows:
         if not (r["ea_code"] and r["tracking"] and r["order_no"]):
             continue
+        is_overseas = False
+        if forwarder:
+            is_overseas = forwarder.is_overseas_proxy(r["receiver"], r.get("receiver_address"))
         ship_rows.append({
             "order_no": r["order_no"],
             "ea_code": r["ea_code"],
@@ -147,6 +157,8 @@ def commit_shipments(rows: list[dict], imported_by: str) -> dict:
             "tracking_no": r["tracking"],
             "courier": r["courier"],
             "receiver_name": r["receiver"],
+            "receiver_address": r.get("receiver_address"),
+            "is_overseas_proxy": is_overseas,
             "shipped_at": r["shipped_at"],
             "sub_channel": r["sub_channel"],
             "sku_code": r["sku_code"],
