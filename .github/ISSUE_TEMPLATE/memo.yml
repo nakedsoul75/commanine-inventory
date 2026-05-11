@@ -1,0 +1,45 @@
+name: 📝 외근 메모 / Memo
+description: 외근 중이나 노트북 접근이 어려울 때 빠르게 남기는 메모. 노트북 복귀 후 Claude가 처리합니다.
+title: "[메모] "
+labels: ["memo"]
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: 메모 내용
+      description: 카톡/클로바노트/음성에서 복사한 텍스트를 그대로 붙여넣어도 됩니다.
+      placeholder: |
+        예) 거래처 A 사장님 통화 - 다음 주 월요일까지 재고 50개 추가 발주 요청.
+            상품코드 ABC-123, 단가 협상 필요.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 종류
+      options:
+        - 아이디어 / 개선
+        - 버그 / 오류
+        - 거래처 / 업무 메모
+        - 할 일 (TODO)
+        - 기타
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: 긴급도
+      options:
+        - 낮음 (시간 날 때)
+        - 보통 (이번 주 내)
+        - 높음 (오늘/내일)
+      default: 1
+
+  - type: input
+    id: source
+    attributes:
+      label: 출처 (선택)
+      placeholder: 예) 통화 - 클로바노트 / 카톡 나에게 쓰기 / 현장 메모
