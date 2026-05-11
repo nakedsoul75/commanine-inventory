@@ -1,0 +1,128 @@
+name: vault-seed
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "vault_seed/**"
+      - ".github/workflows/vault-seed.yml"
+  pull_request:
+    paths:
+      - "vault_seed/**"
+      - ".github/workflows/vault-seed.yml"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Skip Supabase writes (true/false)"
+        required: false
+        default: "true"
+
+concurrency:
+  group: vault-seed-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install pytest bcrypt
+      - run: python -m pytest vault_seed/tests -v
+
+  fetch:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install supabase
+      - name: Run fetch agent
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          VAULT_SEED_DRY_RUN: ${{ github.event.inputs.dry_run || (github.event_name == 'pull_request' && 'true') || 'false' }}
+        run: python -m vault_seed.agents.fetch
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vault-seed-fetch
+          path: vault_seed/artifacts/01_fetch.json
+
+  map:
+    needs: fetch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: vault-seed-fetch
+          path: vault_seed/artifacts
+      - run: python -m vault_seed.agents.map
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vault-seed-map
+          path: vault_seed/artifacts/02_map.json
+
+  diff:
+    needs: map
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: vault-seed-map
+          path: vault_seed/artifacts
+      - run: python -m vault_seed.agents.diff
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vault-seed-diff
+          path: vault_seed/artifacts/03_diff.json
+      - name: Plan summary
+        run: |
+          python -c "import json; p=json.load(open('vault_seed/artifacts/03_diff.json')); print(json.dumps(p['summary'], indent=2, ensure_ascii=False))"
+
+  apply:
+    needs: diff
+    runs-on: ubuntu-latest
+    # Only the apply job touches Supabase. PRs and pushes never write unless
+    # explicitly dispatched with dry_run=false.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install supabase bcrypt
+      - uses: actions/download-artifact@v4
+        with:
+          name: vault-seed-diff
+          path: vault_seed/artifacts
+      - name: Run apply agent
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          VAULT_SEED_PIN_ADMIN: ${{ secrets.VAULT_SEED_PIN_ADMIN }}
+          VAULT_SEED_PIN_STAFF1: ${{ secrets.VAULT_SEED_PIN_STAFF1 }}
+          VAULT_SEED_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: python -m vault_seed.agents.apply
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vault-seed-apply
+          path: |
+            vault_seed/artifacts/04_apply.json
+            vault_seed/artifacts/secrets.rendered.toml

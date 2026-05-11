@@ -29,3 +29,7 @@ logs/
 # Local data
 data/
 *.xlsx.tmp
+
+# vault-seed pipeline artifacts (regenerated on every run)
+vault_seed/artifacts/
+.pytest_cache/
