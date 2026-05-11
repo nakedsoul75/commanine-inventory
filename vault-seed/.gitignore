@@ -1,0 +1,24 @@
+# Obsidian workspace state (사용자별 UI 상태는 동기화 제외)
+.obsidian/workspace*
+.obsidian/cache
+.obsidian/plugins/*/data.json
+
+# 작업 디렉토리·메모리는 로컬 junction이므로 내용 제외 (README와 .gitkeep만 허용)
+06.workspace/*
+!06.workspace/.gitkeep
+!06.workspace/README.md
+07.memory/*
+!07.memory/.gitkeep
+!07.memory/README.md
+
+# Agent 시크릿·로그
+agents/.env
+agents/__pycache__/
+agents/*.pyc
+**/_logs/
+**/_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
