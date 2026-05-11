@@ -27,6 +27,9 @@ env:
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -62,6 +65,28 @@ jobs:
         with:
           name: pytest-log
           path: pytest.log
+      - name: Post pytest output to PR on failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let log = '';
+            try { log = fs.readFileSync('pytest.log', 'utf8'); } catch (e) { log = 'pytest.log missing'; }
+            const tail = log.length > 30000 ? log.slice(-30000) : log;
+            const body = [
+              '### vault-seed unit-tests failed',
+              '',
+              '```',
+              tail,
+              '```'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
 
   fetch:
     needs: unit-tests
