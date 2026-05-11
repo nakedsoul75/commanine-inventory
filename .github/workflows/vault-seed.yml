@@ -44,7 +44,24 @@ jobs:
           python -m pip install "pytest>=8" "bcrypt>=4,<6"
           python -m pip list
       - name: Run tests
-        run: python -m pytest vault_seed/tests -v
+        id: pytest
+        run: |
+          set +e
+          python -m pytest vault_seed/tests -v --tb=long -rA 2>&1 | tee pytest.log
+          status=${PIPESTATUS[0]}
+          {
+            echo "## pytest output (exit=$status)"
+            echo '```'
+            cat pytest.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+      - name: Upload pytest log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-log
+          path: pytest.log
 
   fetch:
     needs: unit-tests
