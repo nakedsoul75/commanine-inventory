@@ -1,0 +1,3 @@
+name,role,pin_env_var
+admin,admin,VAULT_SEED_PIN_ADMIN
+staff1,staff,VAULT_SEED_PIN_STAFF1

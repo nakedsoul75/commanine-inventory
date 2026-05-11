@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["vault_seed/tests"]
+pythonpath = ["."]
+addopts = "-ra --tb=short --strict-markers"

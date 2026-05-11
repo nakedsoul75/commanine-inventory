@@ -1,0 +1,5 @@
+ea_code,code,name,option_name,price,color,is_excluded,eng_name,note
+01130,C01-A-04,콤마나인 캠핑 머그,400ml,12000,00,false,Commanine Camping Mug,sample row — replace with master export
+01131,C01-A-04-50,콤마나인 캠핑 머그,400ml 스텐,15000,50,false,Commanine Camping Mug Steel,sample row — replace with master export
+01200,C02-B-01,콤마나인 캠핑 텀블러,600ml,18000,00,false,Commanine Tumbler,sample row — replace with master export
+01201,C02-B-01-99,콤마나인 캠핑 텀블러,600ml 한정판,22000,99,true,Commanine Tumbler LE,sample row — excluded SKU

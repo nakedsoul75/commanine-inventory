@@ -26,6 +26,10 @@ env/
 *.log
 logs/
 
-# Local data
-data/
+# Local data (only the top-level scratch dir; vault_seed/data is shipped)
+/data/
 *.xlsx.tmp
+
+# vault-seed pipeline artifacts (regenerated on every run)
+vault_seed/artifacts/
+.pytest_cache/
